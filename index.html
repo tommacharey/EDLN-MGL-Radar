@@ -167,45 +167,6 @@
     return null;
   }
 
-  // ---------- Simulation ----------
-  const CALLS = ['DLH4TK','EWG7XA','RYR3FQ','KLM1625','BCS1204','CFG8LA','TUI4PN','SWR204','EXS72J','UPS245','FDX5391','QTR8109','DLH9WG','EZY41KA','AUA1V','BEL7NP','VLG8812','THY1AR','WZZ4021','CLX778'];
-  const TYPES = ['A320','A21N','B738','A319','E190','A333','B77L','B748','A20N','BCS3'];
-  function spawn(i, edge) {
-    const R = CFG.range;
-    let x, y, track;
-    if (edge) {
-      const a = Math.random() * 2 * Math.PI;
-      x = Math.sin(a) * R * 0.98; y = Math.cos(a) * R * 0.98;
-      track = (a * 180 / Math.PI + 180 + (Math.random() - 0.5) * 70 + 360) % 360;
-    } else {
-      const a = Math.random() * 2 * Math.PI, r = Math.sqrt(Math.random()) * R * 0.95;
-      x = Math.sin(a) * r; y = Math.cos(a) * r; track = Math.random() * 360;
-    }
-    const low = Math.random() < 0.35;
-    return {
-      hex: 'sim' + i, call: CALLS[i % CALLS.length], type: TYPES[i % TYPES.length],
-      x, y, track,
-      gs: low ? 150 + Math.random() * 90 : 340 + Math.random() * 170,
-      alt: low ? 1800 + Math.random() * 6000 : 24000 + Math.random() * 15000,
-      rate: low ? (Math.random() < 0.5 ? -900 : 1600) : 0
-    };
-  }
-  function stepSim() {
-    const now = performance.now();
-    if (!simPlanes) { simPlanes = []; for (let i = 0; i < 18; i++) simPlanes.push(spawn(i, false)); simLast = now; }
-    const dt = Math.min(5, (now - simLast) / 1000); simLast = now;
-    const out = [];
-    simPlanes.forEach((s, i) => {
-      const d = s.gs * dt / 3600;
-      s.x += Math.sin(s.track * RAD) * d; s.y += Math.cos(s.track * RAD) * d;
-      s.alt = Math.min(40000, Math.max(1500, s.alt + s.rate * dt / 60));
-      if (Math.hypot(s.x, s.y) > CFG.range * 1.04) { simPlanes[i] = spawn(i, true); s = simPlanes[i]; }
-      const ll = toLL(s.x, s.y);
-      out.push({ hex: s.hex, flight: s.call, t: s.type, lat: ll.lat, lon: ll.lon, alt_baro: Math.round(s.alt), gs: s.gs, track: s.track, baro_rate: s.rate });
-    });
-    return out;
-  }
-
   // ---------- Verarbeiten ----------
   function ingest(list) {
     const now = performance.now();
